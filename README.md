@@ -11,7 +11,10 @@
 * [Refs](#Refs)
 * [Component "is"](#Component-“is”)
 * [Expose](#Expose)
-
+* [Watch](#Watch)
+* [WatchEffect](#WatchEffect)
+* [Computed](#Computed)
+* [Lifecycle](#Lifecycle)
 
 ## Component
 組件類似於模組的概念，當我們需要重複使用或是為了切割程式碼而切分，都是避免一次閱讀太多不必要的功能。
@@ -299,10 +302,6 @@ setup(props, { emit }) {
 
 ---
 
-## Expose
-
----
-
 ## Event
 常見的event有以下：
 ```javascript
@@ -505,17 +504,129 @@ setup() {
 context.expose({ increase, decrease, count });
 ```
 
+---
+
+## Watch
+有時候我們需要一個一個數值改變的時候做相對應的操作，這時候watch可以幫助我們
+
+>這邊要注意一下，假如是點擊後數值改變做side effect，不應該使用watch監控，而應該寫在點擊的事件中。
+
+```javascript
+<script>
+import { ref, watch } from "vue";
+export default {
+  setup() {
+    const text = ref("");
+    watch(
+      () => text.value, //監控值
+      () => {
+        console.log("changed");
+      }
+    );
+    return {
+      text,
+    };
+  },
+};
+</script>
+```
+如果我們不想監控專一的值可以使用watch中的options
+```javascript
+watch(
+  () => text,
+  () => {
+    console.log("changed");
+  },
+  { deep: true }
+  );
+```
+
+---
+
+## WatchEffect
+watchEffect提供我們只需要在區塊中有取用到其變數，就會自動監控該值
+```javascript
+const text = ref("");
+watchEffect(() => {
+  console.log(text.value);
+});
+```
+
+## Computed
+Computed可以幫助記憶函式執行跟執行完後的值，也就是只要使用computed後等於被cached(被快取)，基本上就不是響應式的結果。
+
+但是這種方式可以避免一些不用一直刷新的列表一直被強制刷新影響到使用者的效能。
+```javascript
+<template>
+  <div>
+    {{ today() }}
+    <br />
+    {{ text }}
+    <br />
+    <input type="text" v-model="text" />
+  </div>
+</template>```
+```javascript
+function today() {
+   console.log("get timezone");
+   return new Date();
+ }
+```
+
+![](https://hackmd.io/_uploads/BJ5ao6A_2.gif)
+
+使用computed
+```javascript
+<template>
+  <div>
+    {{ today }}
+    <br />
+    {{ text }}
+    <br />
+    <input type="text" v-model="text" />
+  </div>
+</template>```
+```javascript
+const today = computed(() => {
+  console.log("get timezone");
+  return new Date();
+});
+```
+
+![](https://hackmd.io/_uploads/S1x0j6Aun.gif)
 
 
+---
 
+## Lifecyle
+[Vue3 Lifecycle](https://vuejs.org/guide/essentials/lifecycle.html#registering-lifecycle-hooks)
 
+![](https://hackmd.io/_uploads/Sy7zJ0R_3.png)
+>https://vuejs.org/guide/essentials/lifecycle.html#lifecycle-diagram
 
+* setup
+* onBeforeMount
+* onMounted
+* onBeforeUpdate
+* onUpdated
+* onBeforeUnmount
+* onUnmounted
 
+```javascript
+setup() {
+  onMounted(() => console.log("onMounted"));
+  onBeforeMount(() => console.log("onBeforeMount"));
+  console.log("setup");
+},
+// console setup -> onBeforeMount -> onMounted
+```
 
+上面簡單介紹一下onBeforeUnmount跟onUnmouned
 
+只要是unmounted相關的，會在頁面解除掛載也就是換頁或是組件的dom被移除，就會執行unmounted的函式
 
-
-
-
-
+```javascript
+onBeforeUnmount(() => alert("page closing"));
+onUnmount(() => alert("page closed"));
+```
 
